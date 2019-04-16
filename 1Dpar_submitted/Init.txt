@@ -1,0 +1,2 @@
+# MM    t_end    factor    dtout    D      a      b
+256       1.       0.96      1.0     0.1    0.0    1.
