@@ -19,8 +19,8 @@ else:
    print ("Lab 6 is being imported \n")
 
 # open files for outputting info
-# prof = open('o_prof.txt', 'w')
-# comp = open('o_compare.txt', 'w')
+prof = open('o_prof.txt', 'w')
+comp = open('o_compare.txt', 'w')
 outf = open('o_out.txt', 'w')
 
 ###############################################################################
@@ -262,8 +262,8 @@ print('Maximum error is %e at time %f \n' % (ERR, time), file = outf)
 
 # close files
 init_file.close()
-# prof.close()
-# comp.close()
+prof.close()
+comp.close()
 outf.close()
 
 ################################################################################
