@@ -10,7 +10,7 @@ from z_io import INPUT, OUTPUT, COMPARISON
 from z_setup import MESH, INIT
 from z_update import FLUX, PDE
 
-# check to see if Lab $ is being run directly
+# check to see if Lab 4 is being run directly
 if __name__ == "__main__":
     print ("Lab4 1D_serial is being run directly")
 else:
