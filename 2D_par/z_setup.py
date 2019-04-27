@@ -1,4 +1,6 @@
 # Abbey L. Johnson
+# Axially Symmetric Heat Transfer
+# Parallelized Explicit Finite Volume Code
 
 # import modules
 import numpy as np
@@ -53,4 +55,3 @@ def INIT(Mr, Mz, U, r, z):
     return(U)
 
 ###############################################################################
-    

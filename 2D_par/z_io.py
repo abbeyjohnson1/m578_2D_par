@@ -1,15 +1,14 @@
 # Abbey L. Johnson
+# Axially Symmetric Heat Transfer
+# Parallelized Explicit Finite Volume Code
 
 # import modules
 import numpy as np
 
-# input subroutine: read parameters from data file
-def INPUT(filename):
-    data = np.loadtxt(filename)
-    return(data)
 
 
 ################################################################################
+# do additional output, one output subroutine per file profile, error, run info etc
 
 # output subroutine: print stuff??? to file
 def OUTPUT():
@@ -27,3 +26,14 @@ def OUTPUT():
 #    prof.write('\n')
 
 ################################################################################
+# output to outf
+    # print parameter values etc. to output file
+    print('Parameters for this run: ', file = outf)
+    print('MMr = %f ' % MMr, file = outf)
+    print('MMz = %f ' % MMz, file = outf)
+    print('Rin = %f ' % Rin, file = outf)
+    print('Rout = %f' % Rout, file = outf)
+    print('t_end = %f ' % tend, file = outf)
+    print('factor = %f ' % factor, file = outf)
+    print('dtout = %f ' % dtout, file = outf)
+    print('D = %f \n' % D, file = outf)

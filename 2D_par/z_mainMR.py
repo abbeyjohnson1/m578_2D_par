@@ -1,18 +1,106 @@
 # Abbey L. Johnson
-# 2-D serial code
+# Axially Symmetric Heat Transfer
+# Parallelized Explicit Finite Volume Code
 
-# import modules
-import numpy as np
+# import modules, MPI, and subroutines
 import math
-
-# import subroutines from other files
+import numpy as np
+from mpi4py import mpi4py
+from z_messaging import RECV_output_MPI
 from z_io import INPUT, OUTPUT
-from z_setup import INIT, MESH
-from z_update import FLUX, PDE, COMPARISON
+from z_setup import MESH, INIT
+from z_update import COMPARISON
 
-# Abbey L. Johnson
-# Lab 6: Axially Symmetric Heat Transfer
-# Explicit Finite Volume Code
+# >>> master >>>
+
+def MASTER(comm):
+
+    # check to see if z_mainMR file is running
+    print('z_mainMR is being run')
+
+    # read parameters from initialization data file
+    with open("./Init.txt") as init_file:
+        for line in init_file:
+            line = line.partition('#')[0]
+            input = line.split()
+
+    # assign parameter values
+
+    # nodes in r-direction
+    MMr = np.float64(input[0])
+    # nodes in z-direction
+    MMz = np.float64(input[1])
+    # inner radius of cylinder
+    Rin = np.float64(input[2])
+    # outer radius of cylinder
+    Rout = np.float64(input[3])
+    # end time
+    tend = np.float64(input[4])
+    # factor for stability
+    factor = np.float64(input[5])
+    # time-step when to output
+    dtout = np.float64(input[6])
+    # diffusivity
+    D = np.float64(input[7])
+
+    # open files for outputting info
+    outf = open('o_out.txt', 'w')
+    prof = open('o_prof.txt', 'w')
+    comp = open('o_compare.txt', 'w')
+
+    # compute parameters
+    dx =
+    dz =
+
+    # NOTE TO SELF: make sure to always use even M divisible by nWRs!!!
+    glob_Mz = int()
+
+    dtEXPL =
+
+    # time-step (for stability of explicit scheme)
+
+    # maximum number of iterations
+    MaxSteps = + 1
+
+    # when to print outputs
+    tout =
+
+    # initialize time-stepping variables
+
+    # call output routine to record concentration profile at time = 0
+
+    # pack integers in iparms array
+
+    # pack reals in parms array
+
+    # send parms arrays to everyone
+    comm.bcast(iparms, root = 0)
+    comm.bcast(parms, root = 0)
+
+    # time-stepping loop:
+    # workers do computation and send output to master every dtout
+    # master receives from each worker its section of output array(s)
+
+    # begin time-stepping
+    for nsteps in range(1, MaxSteps):
+
+        # synchronize everyone
+        comm.Barrier()
+
+        # update time = time + dt
+        time = nsteps * dt
+
+        # check if ready to output
+        if time >= tout:
+
+            # recieve output from workers
+            U, u_exact = RECV_output_MPI(comm)
+
+            # call comparison subroutine
+
+
+# <<< end master <<<
+
 
 # problem describes axially symmetric heat conduction in a hollow cylinder:
 # Rin < r < Rout and 0 < z < Z
@@ -21,45 +109,11 @@ from z_update import FLUX, PDE, COMPARISON
 
 ###############################################################################
 
-# import modules
-import numpy as np
 
-# check to make sure file is being run directly
-if __name__ == "__main__":
-   print ("Lab 9 serial is being run directly \n")
-else:
-   print ("Lab 9 serial is being imported \n")
-
-# open files for outputting info
-prof = open('o_prof.txt', 'w')
-comp = open('o_compare.txt', 'w')
-outf = open('o_out.txt', 'w')
 
 ###############################################################################
 
-# read parameters from init data file
-with open("./Init.txt") as init_file:
-    for line in init_file:
-        line = line.partition('#')[0]
-        contents = line.split()
 
-# assign parameter values
-# nodes in r-direction
-MMr = np.float64(contents[0])
-# nodes in z-direction
-MMz = np.float64(contents[1])
-# inner radius of cylinder
-Rin = np.float64(contents[2])
-# outer radius of cylinder
-Rout = np.float64(contents[3])
-# end time
-tend = np.float64(contents[4])
-# factor for stability
-factor = np.float64(contents[5])
-# time-step when to output
-dtout = np.float64(contents[6])
-# diffusivity
-D = np.float64(contents[7])
 
 # set pi to full precision
 Pi = 4 * np.arctan(1.0)
@@ -145,15 +199,6 @@ print('Maximum error is %e at time %f \n' % (ERR, time))
 
 # print final outputs
 
-print('Parameters for this run: ', file = outf)
-print('MMr = %f ' % MMr, file = outf)
-print('MMz = %f ' % MMz, file = outf)
-print('Rin = %f ' % Rin, file = outf)
-print('Rout = %f' % Rout, file = outf)
-print('t_end = %f ' % tend, file = outf)
-print('factor = %f ' % factor, file = outf)
-print('dtout = %f ' % dtout, file = outf)
-print('D = %f \n' % D, file = outf)
 
 
 # print run-time information to output file

@@ -1,5 +1,8 @@
 # Abbey L. Johnson
-# 2-D serial code
+# Axially Symmetric Heat Transfer
+# Parallelized Explicit Finite Volume Code
+
+# >>> workers >>>
 
 # import modules
 import numpy as np
