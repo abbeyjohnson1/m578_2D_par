@@ -19,11 +19,11 @@ def RECV_output_MPI(comm, U, ):
         msgtag = 1000 + i
         msg = comm.recv(source = i, tag = msgtag)
         if (i == 1):
-            U = np.append()
+            U = np.append(U, )
         if (i == nWRs):
-            U = np.append()
+            U = np.append(U, )
         else:
-            U = np.append()
+            U = np.append(U, )
     return(U)
 
 def SEND_output_MPI(comm, Me, NodeUP, NodeDN, Mr, Mz, U):

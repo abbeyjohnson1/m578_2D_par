@@ -2,6 +2,12 @@
 # Axially Symmetric Heat Transfer
 # Parallelized Explicit Finite Volume Code
 
+# problem describes axially symmetric heat conduction in a hollow cylinder:
+# Rin < r < Rout and 0 < z < Z
+# imposed temperature conditions on all boundaries, starting with given temp.
+# note: this problem has exact solution
+
+
 # MAIN PROGRAM
 
 # imports

@@ -5,7 +5,7 @@
 # import modules, MPI, and subroutines
 import math
 import numpy as np
-from mpi4py import mpi4py
+from mpi4py import MPI
 from z_messaging import RECV_output_MPI
 from z_io import INPUT, OUTPUT
 from z_setup import MESH, INIT
@@ -13,6 +13,7 @@ from z_update import COMPARISON
 
 # >>> master >>>
 
+# NEED ARGUMENTS
 def MASTER(comm):
 
     # check to see if z_mainMR file is running
@@ -25,6 +26,7 @@ def MASTER(comm):
             input = line.split()
 
     # assign parameter values
+    # NOTE TO SELF: make sure to always use even M divisible by nWRs!!!
 
     # nodes in r-direction
     MMr = np.float64(input[0])
@@ -43,35 +45,70 @@ def MASTER(comm):
     # diffusivity
     D = np.float64(input[7])
 
+
+# should these files be opened and closed here?
     # open files for outputting info
     outf = open('o_out.txt', 'w')
     prof = open('o_prof.txt', 'w')
     comp = open('o_compare.txt', 'w')
 
-    # compute parameters
-    dx =
-    dz =
+    # compute other parameters
 
-    # NOTE TO SELF: make sure to always use even M divisible by nWRs!!!
+    # height of cylindar
+    Z = np.pi
+
+    dr = np.float64(1.0 / MMr)
+
+    Mr = int( (Rout - Rin) * MMr )
+    Mr1 = Mr + 1
+    Mr2 = Mr + 2
+
+    dz = np.float64(1.0 / MMz)
+
+    Mz = int( (Z - 0) * MMz )
+    Mz1 = Mz + 1
+    Mz2 = Mz + 2
+
+# need a global Mz do i need other stuff?
     glob_Mz = int()
 
-    dtEXPL =
+    dtEXPL = np.float64(1 / (2 * D * (1 / (dr * dr) + 1 / (dz * dz) ) ) )
 
     # time-step (for stability of explicit scheme)
+    dt = np.float64(factor * dtEXPL)
+
+    # declare variables and dimensions of arrays
+    r = np.zeros(Mr + 2, dtype = np.float64)
+    z = np.zeros(Mz + 2, dtype = np.float64)
+    Ar = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
+    Az = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
+    Fr = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
+    Fz = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
+    dV = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
+    U = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
+    u_exact = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
 
     # maximum number of iterations
-    MaxSteps = + 1
+    MaxSteps = int(tend / dt) + 2
 
     # when to print outputs
-    tout =
+    tout = dtout
 
     # initialize time-stepping variables
+    nsteps = 0
+    time = 0.0
 
-    # call output routine to record concentration profile at time = 0
+#??? call mesh subroutine
+
+#??? call initialization subroutine
+
+#??? call output routine to record concentration profile at time = 0
 
     # pack integers in iparms array
+    iparms = np.array([ , , , ], dtype = np.int)
 
     # pack reals in parms array
+    parms = np.array([ , , , ], dtype = np.float64)
 
     # send parms arrays to everyone
     comm.bcast(iparms, root = 0)
@@ -79,7 +116,7 @@ def MASTER(comm):
 
     # time-stepping loop:
     # workers do computation and send output to master every dtout
-    # master receives from each worker its section of output array(s)
+    # master recieves from each worker its secton of output arrays(s)
 
     # begin time-stepping
     for nsteps in range(1, MaxSteps):
@@ -93,124 +130,44 @@ def MASTER(comm):
         # check if ready to output
         if time >= tout:
 
-            # recieve output from workers
-            U, u_exact = RECV_output_MPI(comm)
+# need arguments
+            # recieve output from workers when time = dtout
+            U = RECV_output_MPI(comm)
 
+# global or local Mr and Mz
             # call comparison subroutine
+            ERR = COMPARISON(Mr, Mz, u_exact, time, r, z, U)
 
+# call output subroutine
+
+            # update tout
+            tout = tout + dtout
+
+    # end time-stepping
+
+    # print run-time information to screen
+    print('MASTER DONE: exiting at t = %f after %i steps.' % (time, nsteps))
+    print('MASTER DONE: maximum error = {}' .format(maxERR))
+
+    # print information to outf file
+    print('Parameters for this run: ', file = outf)
+    print('MMr = %f ' % MMr, file = outf)
+    print('MMz = %f ' % MMz, file = outf)
+    print('Rin = %f ' % Rin, file = outf)
+    print('Rout = %f' % Rout, file = outf)
+    print('t_end = %f ' % tend, file = outf)
+    print('factor = %f ' % factor, file = outf)
+    print('dtout = %f ' % dtout, file = outf)
+    print('D = %f \n' % D, file = outf)
+
+    # print run-time information to output file
+    print('MASTER DONE: exiting at t = %f after %i steps. \n' % (time, nsteps), file = outf)
+#    print('Maximum error is %e at time %f \n' % (ERR, time), file = outf)
+
+    # close files
+    init_file.close()
+    prof.close()
+    comp.close()
+    outf.close()
 
 # <<< end master <<<
-
-
-# problem describes axially symmetric heat conduction in a hollow cylinder:
-# Rin < r < Rout and 0 < z < Z
-# imposed temperature conditions on all boundaries, starting with given temp.
-# note: this problem has exact solution
-
-###############################################################################
-
-
-
-###############################################################################
-
-
-
-# set pi to full precision
-Pi = 4 * np.arctan(1.0)
-# height of cylinder
-Z = Pi
-# note: maybe should read Z in from init file?
-# note: Z = pi could create problems, so code fluxes for non-uniform grid
-
-dr = np.float64(1.0 / MMr)
-dz = np.float64(1.0 / MMz)
-
-# Mr = int( (Rout - Rin) / dr )
-Mr = int( (Rout - Rin) * MMr )
-Mr1 = int(Mr + 1)
-
-# Mz = int( (Z - 0.0) / dz )
-Mz = int( (Z - 0.0) * MMz )
-Mz1 = int(Mz + 1)
-
-dtEXPL = np.float64(1 / (2 * D * (1/(dr * dr) + 1/(dz * dz))))
-
-# time-step (for stability of the explicit scheme)
-dt = np.float64(factor * dtEXPL)
-
-# declare variables and dimensions of arrays
-r = np.zeros(Mr + 2, dtype = np.float64)
-z = np.zeros(Mz + 2, dtype = np.float64)
-Ar = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
-Az = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
-Fr = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
-Fz = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
-dV = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
-U = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
-u_exact = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
-
-# call mesh subroutine
-r, z, Ar, Az, dV = MESH(r, Rin, dr, Mr1, Rout, z, dz, Mz1, Z, Mr, Ar, Mz, Az, dV)
-# never forget to check the mesh
-# print('r = {}' .format(r))
-# print('z = {}' .format(z))
-
-# initialize
-nsteps = 0
-time = 0.0
-tout = dtout
-MaxSteps = int(tend / dt) + 1
-
-# call initialization subroutine
-U = INIT(Mr, Mz, U, r, z)
-
-# call output routine to record the concentration profile at time t = 0
-# OUTPUT(time, r, Mr, z, Mz, U)
-
-###############################################################################
-
-# note: should insert STS scheme for speedup!!!
-
-# begin time-stepping
-for nsteps in range(1, MaxSteps + 1):
-    # update time = time + dt
-    # BCs are time dependent, so update time before calling FLUX
-    time = nsteps * dt
-    # call flux subroutine
-    U, Fr, Fz = FLUX(r, Mr1, z, Mz1, U, time, Fr, D, Fz)
-    # call PDE subroutine
-    U = PDE(Mr1, Mz1, Ar, Fr, Az, Fz, U, dt, dV)
-    # check if ready to output
-    if time >= tout:
-        # call compare subroutine
-        ERR = COMPARISON(Mr, Mz, u_exact, time, r, z, U)
-        # call output subroutine
-        # OUTPUT(time, r, Mr, z, Mz, U)
-        # update tout
-        tout = tout + dtout
-
-# print run-time information to screen
-print('DONE: exiting at t = %f after %i steps. \n' % (time, nsteps))
-print('Maximum error is %e at time %f \n' % (ERR, time))
-
-# end time-stepping
-
-###############################################################################
-
-# print final outputs
-
-
-
-# print run-time information to output file
-print('DONE: exiting at t = %f after %i steps. \n' % (time, nsteps), file = outf)
-
-# print maximum error at t_end for i=0:M+1
-print('Maximum error is %e at time %f \n' % (ERR, time), file = outf)
-
-# close files
-init_file.close()
-prof.close()
-comp.close()
-outf.close()
-
-################################################################################
