@@ -2,6 +2,8 @@
 # Axially Symmetric Heat Transfer
 # Parallelized Explicit Finite Volume Code
 
+# >>> master >>>
+
 # import modules, MPI, and subroutines
 import math
 import numpy as np
@@ -10,8 +12,6 @@ from z_messaging import RECV_output_MPI
 from z_io import INPUT, OUTPUT
 from z_setup import MESH, INIT
 from z_update import COMPARISON
-
-# >>> master >>>
 
 # NEED ARGUMENTS
 def MASTER(comm):
@@ -26,7 +26,7 @@ def MASTER(comm):
             input = line.split()
 
     # assign parameter values
-    # NOTE TO SELF: make sure to always use even M divisible by nWRs!!!
+    # NOTE TO SELF: always use even M divisible by nWRs!!!
 
     # nodes in r-direction
     MMr = np.float64(input[0])
@@ -132,6 +132,9 @@ def MASTER(comm):
 
 # call output subroutine
 
+            # print error at dtout to file
+            print('Maximum error = {} at time = {} \n' .format(ERR, time), file = outf)
+
             # update tout
             tout = tout + dtout
 
@@ -154,7 +157,7 @@ def MASTER(comm):
 
     # print run-time information to output file
     print('MASTER DONE: exiting at t = %f after %i steps. \n' % (time, nsteps), file = outf)
-#    print('Maximum error is %e at time %f \n' % (ERR, time), file = outf)
+    print('Maximum error is %e at time %f \n' % (ERR, time), file = outf)
 
     # close files
     init_file.close()
