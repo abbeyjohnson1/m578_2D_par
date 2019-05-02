@@ -59,18 +59,15 @@ def MASTER(comm):
 
     dr = np.float64(1.0 / MMr)
 
-    Mr = int( (Rout - Rin) * MMr )
-    Mr1 = Mr + 1
-    Mr2 = Mr + 2
+    glob_Mr = int( (Rout - Rin) * MMr )
+    glob_Mr1 = int(Mr + 1)
+    glob_Mr2 = int(Mr + 2)
 
     dz = np.float64(1.0 / MMz)
 
-    Mz = int( (Z - 0) * MMz )
-    Mz1 = Mz + 1
-    Mz2 = Mz + 2
-
-# need a global Mz do i need other stuff?
-    glob_Mz = int()
+    glob_Mz = int( (Z - 0) * MMz )
+    glob_Mz1 = int(Mz + 1)
+    glob_Mz2 = int(Mz + 2)
 
     dtEXPL = np.float64(1 / (2 * D * (1 / (dr * dr) + 1 / (dz * dz) ) ) )
 
@@ -78,13 +75,8 @@ def MASTER(comm):
     dt = np.float64(factor * dtEXPL)
 
     # declare variables and dimensions of arrays
-    r = np.zeros(Mr + 2, dtype = np.float64)
-    z = np.zeros(Mz + 2, dtype = np.float64)
-    Ar = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
-    Az = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
-    Fr = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
-    Fz = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
-    dV = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
+# not sure that this needs to be here
+
     U = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
     u_exact = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
 

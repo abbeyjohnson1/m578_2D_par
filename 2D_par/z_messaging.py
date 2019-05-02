@@ -14,13 +14,15 @@ def RECV_output_MPI(comm, U, ):
     # size of U(:,j) array
     J2 = Mz + 2
 
+# local Mz
+
     for i in range(1, nWRs + 1):
         Jme = (i-1) * Mz + 1
         msgtag = 1000 + i
         msg = comm.recv(source = i, tag = msgtag)
         if (i == 1):
             U = np.append(U, )
-        if (i == nWRs):
+        elif (i == nWRs):
             U = np.append(U, )
         else:
             U = np.append(U, )
