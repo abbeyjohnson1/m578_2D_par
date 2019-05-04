@@ -13,18 +13,18 @@ from z_setup import INIT, MESH
 from x_update import PDE, FLUX
 
 # NEED ARGUMENTS
-def WORKER(comm):
+def WORKER(comm, nWRs, Me):
 
     # check to see if worker file is running
-    print('z_mainWR number {} is being run' .format(ME))
+    print('z_mainWR number {} is being run' .format(Me))
 
     # upack iparms arrray that was broadcasted
     iparms = comm.bcast(None, root = 0)
-    ?, ?, ? = iparms
+    glob_Mr, glob_Mr1, glob_Mr2, glob_Mz, MaxSteps, nsteps= iparms
 
     # upack parms array that was broadcasted
     parms = comm.bcast(None, root = 0)
-    ?, ?, ? = parms
+    dr, dz, dt, tout, dtout, D, Rin, Rout, Z, time = parms
 
     # declare variables local to workers
 
@@ -36,24 +36,13 @@ def WORKER(comm):
     NodeUP = Me + 1
     NodeDN = Me - 1
 
-    # declare mesh, which is local to worker
-    r = np.zeros(glob_Mr + 2, dtype = np.float64)
-    z = np.zeros(loc_Mz + 2, dtype = np.float64)
-    Ar = np.zeros((glob_Mr + 2, loc_Mz + 2), dtype = np.float64)
-    Az = np.zeros((glob_Mr + 2, loc_Mz + 2), dtype = np.float64)
-    dV = np.zeros((glob_Mr + 2, loc_Mz + 2), dtype = np.float64)
 # need arguments
     r, z, Ar, Az, dV = MESH()
     print('Me = {}, r mesh = {}' .format(Me, r))
     print('Me = {}, z mesh = {}' .format(Me, z))
 
     # initialize U
-# need ARGUMENTS
-    U = INIT()
-
-    # initialize arrays locally for each worker
-    Fr = np.zeros((glob_Mr + 2, loc_Mz + 2), dtype = np.float64)
-    Fz = np.zeros((glob_Mr + 2, loc_Mz + 2), dtype = np.float64)
+    U = INIT(glob_Mr2, loc_Mz2, r, z)
 
     # time-stepping loop:
     # workers do computation and send output to master every dtout
@@ -65,24 +54,24 @@ def WORKER(comm):
         # synchronize everyone
         comm.Barrier()
 
-        # exchange "boundary" values with neighbros
-        EXCHANGE_bry_MPI()
+        # exchange "boundary" values with neighboring workers
+        EXCHANGE_bry_MPI(comm, nWRs, Me, NodeUP, NodeDN, glob_Mr, loc_Mz, U)
 
         # update time = time + dt
         time = nsteps * dt
 
-# need arguments here
         # call flux subroutine
-        FLUX()
+        U, Fr, Fz = FLUX(glob_Mr1, glob_Mr2, loc_Mz1, loc_Mz2,
+        Me, nWRs, U, time, r, z, D)
 
-# need arguments here
         # call PDE subroutine
-        PDE()
+        U = PDE(glob_Mr1, loc_Mz1, Ar, Fr, Az, Fz, U, dt, dV)
 
         # send output to master every dtout
         if time >= tout:
 
-            SEND_output_MPI()
+            # send output from worker to master
+            SEND_output_MPI(comm, Me, U)
 
             # update tout
             tout = tout + dtout

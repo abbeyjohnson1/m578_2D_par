@@ -2,37 +2,47 @@
 # Axially Symmetric Heat Transfer
 # Parallelized Explicit Finite Volume Code
 
-# import modules
 import numpy as np
-import math
 
-# flux subroutine
-
-# flux subroutine
-def FLUX(r, Mr1, z, Mz1, U, time, Fr, D, Fz):
-    # boundary conditions
-    for i in range(1, Mr1):
-        U[i][0] = 0.0
-        U[i][Mz1] = 0.0
-    for j in range(1, Mz1):
+# >>> flux subroutine >>>
+def FLUX(glob_Mr1, glob_Mr2, loc_Mz1, loc_Mz2, Me, nWRs, U, time, r, z, D):
+    # initialize arrays locally for each worker
+    Fr = np.zeros((glob_Mr2, loc_Mz2), dtype = np.float64)
+    Fz = np.zeros((glob_Mr2, loc_Mz2), dtype = np.float64)
+    # boundary conditions (only applicable to first and last worker)
+    if (Me == 1):
+        for i in range(1, glob_Mr1):
+            U[i][0] = 0.0
+    if (Me == nWRs):
+        for i in range(1, glob_Mr1):
+            U[i][loc_Mz1] = 0.0
+# THIS MAY BE WHERE THE PROBLEM IS (what i had originally in serial)
+# should this maybe be range(0, ...) ?!?!?!
+#        for i in range(1, glob_Mr1):
+#            U[i][0] = 0.0
+#            U[i][loc_Mz1] = 0.0
+#        for j in range(1, loc_Mz1):
+#            U[0][j] = 0.0
+#            U[glob_Mr1][j] = np.exp(-time) * np.log(2.0) * np.sin(z[j])
+    # boundary conditions (applicable to each worker)
+    for i in range(1, loc_Mz1):
         U[0][j] = 0.0
-        U[Mr1][j] = np.exp(-time) * np.log(2.) * np.sin(z[j])
+        U[glob_Mr1][j] = np.exp(-time) * np.log(2.0) * np.sin(z[j])
     # radial fluxes
-    for i in range(1, Mr1 + 1):
-        for j in range(1, Mz1):
+    for i in range(1, glob_Mr2):
+        for j in range(1, loc_Mz1):
             Fr[i][j] = -D * (U[i][j] - U[i-1][j]) / (r[i] - r[i-1])
     # axial fluxes
-    for i in range(1, Mr1):
-        for j in range(1, Mz1 + 1):
+    for i in range(1, glob_Mr1):
+        for j in range(1, loc_Mz2):
             Fz[i][j] = -D * (U[i][j] - U[i][j-1]) / (z[j] - z[j-1])
     return(U, Fr, Fz)
+# <<< end flux subroutine <<<
 
-###############################################################################
-
-# PDE subroutine
-def PDE(Mr1, Mz1, Ar, Fr, Az, Fz, U, dt, dV):
-    for i in range(1, Mr1):
-        for j in range(1, Mz1):
+# >>> PDE subroutine >>>
+def PDE(glob_Mr1, loc_Mz1, Ar, Fr, Az, Fz, U, dt, dV):
+    for i in range(1, glob_Mr1):
+        for j in range(1, loc_Mz1):
             # radial fluxes and areas
             radial = Ar[i][j] * Fr[i][j] - Ar[i+1][j] * Fr[i+1][j]
             # axial fluxes and areas
@@ -40,27 +50,4 @@ def PDE(Mr1, Mz1, Ar, Fr, Az, Fz, U, dt, dV):
             # update (internal) temperatures
             U[i][j] = U[i][j] + (dt / dV[i][j]) * (radial + axial)
     return(U)
-
-
-###############################################################################
-
-# subroutine comparing approximation with exact solution
-def COMPARISON(Mr, Mz, u_exact, time, r, z, U):
-    # comp.write('# i j U(i,j) u_exact(i,j) error(i,j) at time = %f \n' % time)
-    ERR = 0.0
-    for i in range(0, Mr + 2):
-        for j in range(0, Mz + 2):
-            # compute exact solution
-            u_exact[i][j] = np.exp(-time) * np.log(r[i]) * np.sin(z[j])
-            # compute error at r[i], z[j]
-            ERRij = abs(U[i][j] - u_exact[i][j])
-            # print to comparison output file
-            # comp.write('%i %i %e %e %e \n' % (i, j, U[i][j], u_exact[i][j], ERRij))
-            # compute max error
-            ERR = max(ERRij, ERR)
-    # comp.write('\n')
-    # comp.write('Maximum error at time %f is %e \n' % (time, ERR))
-    # comp.write('\n')
-    return(ERR)
-
-###############################################################################
+# <<< end PDE subroutine <<<

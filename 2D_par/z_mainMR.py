@@ -4,7 +4,6 @@
 
 # >>> master >>>
 
-# import modules, MPI, and subroutines
 import math
 import numpy as np
 from mpi4py import MPI
@@ -14,20 +13,15 @@ from z_setup import MESH, INIT
 from z_update import COMPARISON
 
 # NEED ARGUMENTS
-def MASTER(comm):
+def MASTER(comm, nWRs, myID):
 
     # check to see if z_mainMR file is running
     print('z_mainMR is being run')
 
-    # read parameters from initialization data file
-    with open("./Init.txt") as init_file:
-        for line in init_file:
-            line = line.partition('#')[0]
-            input = line.split()
+    # read input data from file
+    input = INPUT('./Init.txt')
 
-    # assign parameter values
-    # NOTE TO SELF: always use even M divisible by nWRs!!!
-
+    # assign parameter values, always use even M divisible by nWRs!!!
     # nodes in r-direction
     MMr = np.float64(input[0])
     # nodes in z-direction
@@ -46,7 +40,8 @@ def MASTER(comm):
     D = np.float64(input[7])
 
 
-# should these files be opened and closed here?
+# should these files be opened and closed here or somewhere else?
+# may need to open and close outf file in main ? include it as argument in mainMR
     # open files for outputting info
     outf = open('o_out.txt', 'w')
     prof = open('o_prof.txt', 'w')
@@ -66,19 +61,13 @@ def MASTER(comm):
     dz = np.float64(1.0 / MMz)
 
     glob_Mz = int( (Z - 0) * MMz )
-    glob_Mz1 = int(Mz + 1)
-    glob_Mz2 = int(Mz + 2)
+#    glob_Mz1 = int(Mz + 1)
+#    glob_Mz2 = int(Mz + 2)
 
     dtEXPL = np.float64(1 / (2 * D * (1 / (dr * dr) + 1 / (dz * dz) ) ) )
 
     # time-step (for stability of explicit scheme)
     dt = np.float64(factor * dtEXPL)
-
-    # declare variables and dimensions of arrays
-# not sure that this needs to be here
-
-    U = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
-    u_exact = np.zeros((Mr + 2, Mz + 2), dtype = np.float64)
 
     # maximum number of iterations
     MaxSteps = int(tend / dt) + 2
@@ -90,21 +79,25 @@ def MASTER(comm):
     nsteps = 0
     time = 0.0
 
-#??? call mesh subroutine
-
-#??? call initialization subroutine
-
-#??? call output routine to record concentration profile at time = 0
-
     # pack integers in iparms array
-    iparms = np.array([ , , , ], dtype = np.int)
+    iparms = np.array([glob_Mr, glob_Mr1, glob_Mr2, glob_Mz,
+    MaxSteps, nsteps], dtype = np.int)
 
     # pack reals in parms array
-    parms = np.array([ , , , ], dtype = np.float64)
+    parms = np.array([dr, dz, dt, tout, dtout, D, Rin, Rout,
+    Z, time], dtype = np.float64)
 
     # send parms arrays to everyone
     comm.bcast(iparms, root = 0)
     comm.bcast(parms, root = 0)
+
+    # compute global mesh
+    glob_r, glob_z = glob_MESH(glob_Mr1, glob_Mr2, glob_Mz1, glob_Mz2, Rin, dr, Rout, dz, Z)
+
+    # record initial information at time = 0
+    U = INIT(glob_Mr2, glob_Mz2, glob_r, glob_z)
+    # record concentration profile at time = 0
+    OUTPUT(prof, time, U, glob_r, glob_z)
 
     # time-stepping loop:
     # workers do computation and send output to master every dtout
@@ -126,11 +119,11 @@ def MASTER(comm):
             # recieve output from workers when time = dtout
             U = RECV_output_MPI(comm)
 
-# global or local Mr and Mz
             # call comparison subroutine
-            ERR = COMPARISON(Mr, Mz, u_exact, time, r, z, U)
+            ERR = COMPARISON(comp, time, U, glob_Mr2, glob_Mz2, glob_r, glob_z)
 
-# call output subroutine
+            # record concentration profile
+            OUTPUT(prof, time, U, glob_r, glob_z)
 
             # print error at dtout to file
             print('Maximum error = {} at time = {} \n' .format(ERR, time), file = outf)
@@ -142,25 +135,14 @@ def MASTER(comm):
 
     # print run-time information to screen
     print('MASTER DONE: exiting at t = %f after %i steps.' % (time, nsteps))
-    print('MASTER DONE: maximum error = {}' .format(maxERR))
+    print('MASTER DONE: maximum error at end time = {}' .format(ERR))
 
-    # print information to outf file
-    print('Parameters for this run: ', file = outf)
-    print('MMr = %f ' % MMr, file = outf)
-    print('MMz = %f ' % MMz, file = outf)
-    print('Rin = %f ' % Rin, file = outf)
-    print('Rout = %f' % Rout, file = outf)
-    print('t_end = %f ' % tend, file = outf)
-    print('factor = %f ' % factor, file = outf)
-    print('dtout = %f ' % dtout, file = outf)
-    print('D = %f \n' % D, file = outf)
-
-    # print run-time information to output file
-    print('MASTER DONE: exiting at t = %f after %i steps. \n' % (time, nsteps), file = outf)
-    print('Maximum error is %e at time %f \n' % (ERR, time), file = outf)
+    # print summary of information to output file
+    outputs = np.array([time, nsteps, ERR, MMr, MMz, Rin, Rout,
+    tend, factor, dtout, D, nWRs])
+    OUTPUT_runtime(outf, outputs)
 
     # close files
-    init_file.close()
     prof.close()
     comp.close()
     outf.close()
