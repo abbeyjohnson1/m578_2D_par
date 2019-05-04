@@ -8,9 +8,8 @@ import math
 import numpy as np
 from mpi4py import MPI
 from z_messaging import RECV_output_MPI
-from z_io import INPUT, OUTPUT
-from z_setup import MESH, INIT
-from z_update import COMPARISON
+from z_io import INPUT, OUTPUT, OUTPUT_runtime, COMPARISON
+from z_setup import glob_MESH, INIT
 
 # NEED ARGUMENTS
 def MASTER(comm, nWRs, myID):
@@ -55,14 +54,14 @@ def MASTER(comm, nWRs, myID):
     dr = np.float64(1.0 / MMr)
 
     glob_Mr = int( (Rout - Rin) * MMr )
-    glob_Mr1 = int(Mr + 1)
-    glob_Mr2 = int(Mr + 2)
+    glob_Mr1 = int(glob_Mr + 1)
+    glob_Mr2 = int(glob_Mr + 2)
 
     dz = np.float64(1.0 / MMz)
 
     glob_Mz = int( (Z - 0) * MMz )
-#    glob_Mz1 = int(Mz + 1)
-#    glob_Mz2 = int(Mz + 2)
+    glob_Mz1 = int(glob_Mz + 1)
+    glob_Mz2 = int(glob_Mz + 2)
 
     dtEXPL = np.float64(1 / (2 * D * (1 / (dr * dr) + 1 / (dz * dz) ) ) )
 
@@ -80,12 +79,10 @@ def MASTER(comm, nWRs, myID):
     time = 0.0
 
     # pack integers in iparms array
-    iparms = np.array([glob_Mr, glob_Mr1, glob_Mr2, glob_Mz,
-    MaxSteps, nsteps], dtype = np.int)
+    iparms = np.array([glob_Mr, glob_Mr1, glob_Mr2, glob_Mz, MaxSteps, nsteps], dtype = np.int)
 
     # pack reals in parms array
-    parms = np.array([dr, dz, dt, tout, dtout, D, Rin, Rout,
-    Z, time], dtype = np.float64)
+    parms = np.array([dr, dz, dt, tout, dtout, D, Rin, Rout, Z, time, tend], dtype = np.float64)
 
     # send parms arrays to everyone
     comm.bcast(iparms, root = 0)
@@ -117,7 +114,7 @@ def MASTER(comm, nWRs, myID):
 
 # need arguments
             # recieve output from workers when time = dtout
-            U = RECV_output_MPI(comm)
+            U = RECV_output_MPI(comm, nWRs, glob_Mr2, glob_Mz)
 
             # call comparison subroutine
             ERR = COMPARISON(comp, time, U, glob_Mr2, glob_Mz2, glob_r, glob_z)

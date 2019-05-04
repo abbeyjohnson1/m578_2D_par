@@ -19,13 +19,12 @@ def FLUX(glob_Mr1, glob_Mr2, loc_Mz1, loc_Mz2, Me, nWRs, U, time, r, z, D):
 # THIS MAY BE WHERE THE PROBLEM IS (what i had originally in serial)
 # should this maybe be range(0, ...) ?!?!?!
 #        for i in range(1, glob_Mr1):
-#            U[i][0] = 0.0
 #            U[i][loc_Mz1] = 0.0
 #        for j in range(1, loc_Mz1):
 #            U[0][j] = 0.0
 #            U[glob_Mr1][j] = np.exp(-time) * np.log(2.0) * np.sin(z[j])
     # boundary conditions (applicable to each worker)
-    for i in range(1, loc_Mz1):
+    for j in range(1, loc_Mz1):
         U[0][j] = 0.0
         U[glob_Mr1][j] = np.exp(-time) * np.log(2.0) * np.sin(z[j])
     # radial fluxes

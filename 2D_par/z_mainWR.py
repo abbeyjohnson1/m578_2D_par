@@ -10,7 +10,7 @@ import numpy as np
 from mpi4py import MPI
 from z_messaging import EXCHANGE_bry_MPI, SEND_output_MPI
 from z_setup import INIT, MESH
-from x_update import PDE, FLUX
+from z_update import PDE, FLUX
 
 # NEED ARGUMENTS
 def WORKER(comm, nWRs, Me):
@@ -24,7 +24,7 @@ def WORKER(comm, nWRs, Me):
 
     # upack parms array that was broadcasted
     parms = comm.bcast(None, root = 0)
-    dr, dz, dt, tout, dtout, D, Rin, Rout, Z, time = parms
+    dr, dz, dt, tout, dtout, D, Rin, Rout, Z, time, tend = parms
 
     # declare variables local to workers
 
@@ -36,10 +36,9 @@ def WORKER(comm, nWRs, Me):
     NodeUP = Me + 1
     NodeDN = Me - 1
 
-# need arguments
-    r, z, Ar, Az, dV = MESH()
-    print('Me = {}, r mesh = {}' .format(Me, r))
-    print('Me = {}, z mesh = {}' .format(Me, z))
+    r, z, Ar, Az, dV = MESH(glob_Mr1, glob_Mr2, loc_Mz, loc_Mz1, loc_Mz2, Rin, Rout, dr, dz, Me, nWRs, Z)
+#    print('Me = {}, r mesh = {}' .format(Me, r))
+#    print('Me = {}, z mesh = {}' .format(Me, z))
 
     # initialize U
     U = INIT(glob_Mr2, loc_Mz2, r, z)
@@ -61,8 +60,7 @@ def WORKER(comm, nWRs, Me):
         time = nsteps * dt
 
         # call flux subroutine
-        U, Fr, Fz = FLUX(glob_Mr1, glob_Mr2, loc_Mz1, loc_Mz2,
-        Me, nWRs, U, time, r, z, D)
+        U, Fr, Fz = FLUX(glob_Mr1, glob_Mr2, loc_Mz1, loc_Mz2, Me, nWRs, U, time, r, z, D)
 
         # call PDE subroutine
         U = PDE(glob_Mr1, loc_Mz1, Ar, Fr, Az, Fz, U, dt, dV)
@@ -78,7 +76,7 @@ def WORKER(comm, nWRs, Me):
 
         # end time-stepping
 
-# print run-time information to screen
-print('WORKER DONE: exiting at t = %f after %i steps.' % (time, nsteps))
+    # print run-time information to screen
+    print('WORKER DONE: exiting at t = %f after %i steps.' % (time, nsteps))
 
 # <<< end worker <<<

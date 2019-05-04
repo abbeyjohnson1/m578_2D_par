@@ -25,7 +25,7 @@ def OUTPUT(prof, time, U, glob_r, glob_z):
         np.savetxt(prof, glob_r)
     # print temperature profile
     prof.write('# temperature profile of U(r,z,t) at t = %f \n' % time)
-    np.savetxt(prof, U, delimeter = '\t')
+    np.savetxt(prof, U, delimiter = '\t')
     prof.write('\n')
 # <<< end concentration profile output <<<
 
@@ -42,7 +42,7 @@ def COMPARISON(comp, time, U, glob_Mr2, glob_Mz2, glob_r, glob_z):
             # compute error at r[i], z[j]
             ERRij = abs(U[i][j] - u_exact[i][j])
             # print to comparison output file
-            comp.write('%i %i %e %e %e \n' % (i, j, U[i][j], u_exact[i][j], ERRij))
+            comp.write('%i   %i   %e   %e   %e \n' % (i, j, U[i][j], u_exact[i][j], ERRij))
             # compute max error
             ERR = max(ERRij, ERR)
     comp.write('\n')

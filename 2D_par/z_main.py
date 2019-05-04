@@ -46,8 +46,8 @@ if (myID == mster):
     tt0 = MPI.Wtime()
 
     # call master
-    MASTER(comm, nWRs, myID)
-
+#    MASTER(comm, nWRs, myID)
+    MASTER(comm, nWRs, mster)
     # end timer
     tt1 = MPI.Wtime()
 

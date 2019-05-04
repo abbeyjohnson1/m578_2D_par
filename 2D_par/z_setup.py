@@ -27,7 +27,7 @@ def glob_MESH(glob_Mr1, glob_Mr2, glob_Mz1, glob_Mz2, Rin, dr, Rout, dz, Z):
     glob_r[glob_Mr1] = Rout
     # mesh in z-direction
     glob_z[0] = 0.0
-    glob_z[1] = 0.0 + (dz / 2_
+    glob_z[1] = 0.0 + (dz / 2)
     for j in range(2, glob_Mz1):
         glob_z[j] = glob_z[1] + (j - 1) * dz
     glob_z[glob_Mz1] = Z
@@ -48,7 +48,7 @@ def MESH(glob_Mr1, glob_Mr2, loc_Mz, loc_Mz1, loc_Mz2, Rin, Rout, dr, dz, Me, nW
     r[1] = Rin + (dr / 2)
     for i in range(2, glob_Mr1):
         r[i] = r[1] + (i - 1) * dr
-    r[Mr1] = Rout
+    r[glob_Mr1] = Rout
     # mesh in z-direction (changes depending on worker)
 # NOT SURE THAT THIS IS CORRECT
     loc_z0 = loc_Mz * (Me - 1) * dz - (dz / 2)
