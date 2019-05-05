@@ -11,6 +11,7 @@
 # note: code is parallelized along the z-direction
 
 # MAIN PROGRAM
+# command line prompt = mpirun -n nPROCS python z_main.py
 
 from mpi4py import MPI
 from z_mainMR import MASTER

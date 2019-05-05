@@ -30,16 +30,22 @@ def RECV_output_MPI(comm, nWRs, glob_Mr2, glob_Mz):
 #        elif (i == nWRs):
 #            U = np.append(U, )
 #            U = np.append(U, )
-    U = np.zeros((glob_Mr2, 1))
+    U = np.zeros((glob_Mr2, glob_Mz + 2))
     loc_Mz = int(glob_Mz / nWRs)
     for k in range(1, nWRs + 1):
-        Jme = (k - 1) * loc_Mz + 1
+        Jme = int((k - 1) * loc_Mz + 1)
+        Jend = int(Jme + loc_Mz)
         msgtag = 1000 + k
         msg = comm.recv(source = MPI.ANY_SOURCE, tag = msgtag)
-        U = np.hstack((U, msg[:,1:-1]))
+#        U = np.hstack((U, msg[:,1:-1]))
+        U[:,Jme:Jend] = msg[:,1:-1]
+        if (k == 1):
+            # save first column of first worker
+            U[:,0] = msg[:,0]
         if (k == nWRs):
-            # save the last row of the last worker
-            U = np.hstack((U, msg[:,[-1]]))
+            # save the last column of last worker
+            #U = np.hstack((U, msg[:,[-1]]))
+            U[:,-1] = msg[:,-1]
 
     return(U)
 # <<< end receive output subroutine <<<
@@ -69,28 +75,27 @@ def EXCHANGE_bry_MPI(comm, nWRs, Me, NodeUP, NodeDN, glob_Mr, loc_Mz, U):
     msgDN = 20
 
 
-    # send bottom row to neighbor down
+    # send second column to neighbor down
     if (Me != 1):
-#        msg = U[:, I2]
-        msg = U[1]
+        msg = U[:, 1]
         comm.send(msg, dest = NodeDN, tag = msgDN)
 
-    #  recieve bottom row from neighbor up and save as upper boundary
+    #  recieve second column from neighbor up and save as upper boundary
     if (Me != nWRs):
         msg = comm.recv(None, source = NodeUP, tag = msgDN)
 #        U[:, Jup1] = msg
 #        U[Jup1]
-        U[-1] = msg
-    # send the top row to neighbor up
+        U[:, -1] = msg
+    # send the second-to-last column to neighbor up
     if (Me != nWRs):
 #        msg = U[:, Jup]
-        msg = U[-2]
+        msg = U[:, -2]
         comm.send(msg, dest = NodeUP, tag = msgUP)
 
-    # receive top row from neighbor down and save as lower boundary
+    # receive second-to-last column from neighbor down and save as lower boundary
     if (Me != 1):
         msg = comm.recv(None, source = NodeDN, tag = msgUP)
 #        U[:, 0] = msg
-        U[0] = msg
+        U[:, 0] = msg
 
 # >>> end exchange boundary subroutine >>>

@@ -60,6 +60,7 @@ def MASTER(comm, nWRs, myID):
     dz = np.float64(1.0 / MMz)
 
     glob_Mz = int( (Z - 0) * MMz )
+#    glob_Mz = int( (Z - 0.0) / dz )
     glob_Mz1 = int(glob_Mz + 1)
     glob_Mz2 = int(glob_Mz + 2)
 
@@ -115,6 +116,10 @@ def MASTER(comm, nWRs, myID):
 # need arguments
             # recieve output from workers when time = dtout
             U = RECV_output_MPI(comm, nWRs, glob_Mr2, glob_Mz)
+
+            print(np.shape(U))
+            print(glob_Mr2)
+            print(glob_Mz2)
 
             # call comparison subroutine
             ERR = COMPARISON(comp, time, U, glob_Mr2, glob_Mz2, glob_r, glob_z)
