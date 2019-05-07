@@ -6,47 +6,27 @@
 from mpi4py import MPI
 import numpy as np
 
-# >>> subroutine for receiving outputs >>>
-
-# MAKE EDITS TO THESE SUBROTINES TO MAKE THEM MY OWN
-
+# >>> receive output subroutine >>>
 def RECV_output_MPI(comm, nWRs, glob_Mr2, glob_Mz):
     # only master calls this subroutine
-
-    # size of U(i,:) array
-#    I2 = Mr + 2
-
-    # size of U(:,j) array
-#    J2 = Mz + 2
-
-# local Mz
-
-#    for i in range(1, nWRs + 1):
-#        Jme = (i-1) * Mz + 1
-#        msgtag = 1000 + i
-#        msg = comm.recv(source = i, tag = msgtag)
-#        if (i == 1):
-#            U = np.append(U, )
-#        elif (i == nWRs):
-#            U = np.append(U, )
-#            U = np.append(U, )
     U = np.zeros((glob_Mr2, glob_Mz + 2))
+    # recalculate local Mz
     loc_Mz = int(glob_Mz / nWRs)
     for k in range(1, nWRs + 1):
         Jme = int((k - 1) * loc_Mz + 1)
         Jend = int(Jme + loc_Mz)
         msgtag = 1000 + k
         msg = comm.recv(source = MPI.ANY_SOURCE, tag = msgtag)
-#        U = np.hstack((U, msg[:,1:-1]))
-        U[:,Jme:Jend] = msg[:,1:-1]
+        # append msg to U
+        U[ : , Jme : Jend] = msg[ : , 1 : -1]
+        # if receiving output from first worker
         if (k == 1):
             # save first column of first worker
-            U[:,0] = msg[:,0]
+            U[ : , 0] = msg[ : , 0]
+        # if receiving output from last worker
         if (k == nWRs):
             # save the last column of last worker
-            #U = np.hstack((U, msg[:,[-1]]))
-            U[:,-1] = msg[:,-1]
-
+            U[ : , -1] = msg[ : , -1]
     return(U)
 # <<< end receive output subroutine <<<
 
@@ -60,42 +40,23 @@ def SEND_output_MPI(comm, Me, U):
 # <<< end send output subroutine <<<
 
 # >>> subroutine for workers exchanging "boundary" values >>>
-
-# THIS ONE IS NOT COMPLETE
-# figure out how to redo it with Jup1, I2 etc
-
 def EXCHANGE_bry_MPI(comm, nWRs, Me, NodeUP, NodeDN, glob_Mr, loc_Mz, U):
-
-    # test by setting all u values for each worker to myID
-
-    Jup = loc_Mz
-    Jup1 = Jup + 1
-    I2 = glob_Mr + 2
     msgUP = 10
     msgDN = 20
-
-
     # send second column to neighbor down
     if (Me != 1):
-        msg = U[:, 1]
+        msg = U[ : , 1]
         comm.send(msg, dest = NodeDN, tag = msgDN)
-
-    #  recieve second column from neighbor up and save as upper boundary
+    #  recieve second column from neighbor up; save as upper boundary
     if (Me != nWRs):
         msg = comm.recv(None, source = NodeUP, tag = msgDN)
-#        U[:, Jup1] = msg
-#        U[Jup1]
-        U[:, -1] = msg
+        U[ : , -1] = msg
     # send the second-to-last column to neighbor up
     if (Me != nWRs):
-#        msg = U[:, Jup]
-        msg = U[:, -2]
+        msg = U[ : , -2]
         comm.send(msg, dest = NodeUP, tag = msgUP)
-
-    # receive second-to-last column from neighbor down and save as lower boundary
+    # receive second-to-last column from neighbor down; save as lower boundary
     if (Me != 1):
         msg = comm.recv(None, source = NodeDN, tag = msgUP)
-#        U[:, 0] = msg
-        U[:, 0] = msg
-
+        U[ : , 0] = msg
 # >>> end exchange boundary subroutine >>>

@@ -50,7 +50,6 @@ def MESH(glob_Mr1, glob_Mr2, loc_Mz, loc_Mz1, loc_Mz2, Rin, Rout, dr, dz, Me, nW
         r[i] = r[1] + (i - 1) * dr
     r[glob_Mr1] = Rout
     # mesh in z-direction (changes depending on worker)
-# NOT SURE THAT THIS IS CORRECT
     loc_z0 = loc_Mz * (Me - 1) * dz - (dz / 2)
     z[0] = loc_z0
     z[1] = loc_z0 + dz

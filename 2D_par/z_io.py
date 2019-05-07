@@ -32,7 +32,7 @@ def OUTPUT(prof, time, U, glob_r, glob_z):
 # >>> comparison subroutine >>>
 def COMPARISON(comp, time, U, glob_Mr2, glob_Mz2, glob_r, glob_z):
     # compare numerical approximation with exact solution
-    comp.write('# i j U(i,j) u_exact(i,j) error(i,j) at time = %f \n' % time)
+    # comp.write('# i j U(i,j) u_exact(i,j) error(i,j) at time = %f \n' % time)
     ERR = 0.0
     u_exact = np.zeros((glob_Mr2, glob_Mz2), dtype = np.float64)
     for i in range(0, glob_Mr2):
@@ -42,12 +42,12 @@ def COMPARISON(comp, time, U, glob_Mr2, glob_Mz2, glob_r, glob_z):
             # compute error at r[i], z[j]
             ERRij = abs(U[i][j] - u_exact[i][j])
             # print to comparison output file
-            comp.write('%i   %i   %e   %e   %e \n' % (i, j, U[i][j], u_exact[i][j], ERRij))
+            # comp.write('%i   %i   %e   %e   %e \n' % (i, j, U[i][j], u_exact[i][j], ERRij))
             # compute max error
             ERR = max(ERRij, ERR)
-    comp.write('\n')
-    comp.write('Maximum error at time %f is %e \n' % (time, ERR))
-    comp.write('\n')
+    # comp.write('\n')
+    # comp.write('Maximum error at time %f is %e \n' % (time, ERR))
+    # comp.write('\n')
     return(ERR)
 # <<< end comparison subroutine <<<
 

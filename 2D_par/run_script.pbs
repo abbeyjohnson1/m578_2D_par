@@ -1,0 +1,14 @@
+############ PBSscript for ACF ##########
+############# Abbey L Johnson ########### 
+#!/bin/bash
+#PBS –A ACF-UTK0096
+#PBS -l nodes=1:ppn=2
+#PBS -l walltime=16:00:00
+#PBS -N Mz600_ppn2
+#PBS -j oe
+#PBS -k oe
+cd $PBS_O_WORKDIR
+module load mpi4py/2.0.0
+module load python2
+mpirun -n 2 python2 z_main.py
+############ end of PBSscript ##########
